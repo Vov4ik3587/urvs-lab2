@@ -8,6 +8,13 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 
+//-----------------------------------------------------------------------------
+/**
+ * @brief Вычисляет значение синуса в точке разложением в ряд
+ *
+ * @param x точка, в которой ищем синус
+ * @return double Значение синуса в точке
+ */
 double sinus(double x)
 {
     int count = 1;
@@ -24,7 +31,13 @@ double sinus(double x)
 
     return sum;
 }
-
+//------------------------------------------------------------------------------
+/**
+ * @brief Вычисляет значение косинуса в точке разложением в ряд
+ *
+ * @param x точка, в которой ищем косинус
+ * @return double Значение косинуса в точке
+ */
 double cosinus(double x)
 {
     int count = 1;
@@ -41,6 +54,8 @@ double cosinus(double x)
 
     return sum;
 }
+
+//------------------------------------------------------------------------------
 
 int main()
 {
@@ -61,6 +76,7 @@ int main()
     {
         printf("\nНеверный тип нижнего предела\n");
         errno = EINVAL;
+        remove("file.tmp");
         exit(errno);
     } // einval - недопустимое значение для аргумента
 
@@ -69,6 +85,7 @@ int main()
     {
         printf("\nНеверный тип верхнего предела\n");
         errno = EINVAL;
+        remove("file.tmp");
         exit(errno);
     } // einval - недопустимое значение для аргумента
 
@@ -76,14 +93,16 @@ int main()
     {
         printf("\nА должно быть не больше, чем В\n");
         errno = EINVAL;
+        remove("file.tmp");
         exit(errno);
     } // einval - недопустимое значение для аргумента
 
     printf("Количество разбиений: ");
-    if (!scanf("%d", &K))
+    if (!scanf("%d", &K) || K <= 0)
     {
         printf("\nНеверный тип количества разбиений\n");
         errno = EINVAL;
+        remove("file.tmp");
         exit(errno);
     } // einval - недопустимое значение для аргумента
 
@@ -154,12 +173,10 @@ int main()
     if (proc.num == FunCosProc)
         cosA = proc.data;
 
-    printf("%f %f\n", sinA, cosA);
-
     close(file_tmp);    //закрываем
     remove("file.tmp"); //удаляем
 
-    waitpid(FunSinProc, NULL, 0);
+    waitpid(FunSinProc, NULL, 0); // ожидает завершение процесса
     waitpid(FunCosProc, NULL, 0);
 
     double F = H / 2 * (sinA + cosA); //формула трапеций итоговая
