@@ -49,11 +49,13 @@ int main()
         int num;     //идентификатор потомка
         double data; //значение, полученное от потомка
     } proc;
+
     int K, FunSinProc, FunCosProc, file_tmp; // file_tmp - файловый дескриптор .tmp
     double A, B, H;
     struct stat tmp_stat;
 
-    file_tmp = open("file.tmp", O_CREAT | O_RDWR); //открываем временый файл
+    file_tmp = open("file.tmp", O_CREAT | O_RDWR); // O_CREAT - создает файл, если еще его нет
+
     printf("Нижняя граница: ");
     if (!scanf("%lf", &A))
     {
@@ -85,18 +87,16 @@ int main()
         exit(errno);
     } // einval - недопустимое значение для аргумента
 
-    H = (B - A) / K;
+    H = (B - A) / K; //длина отрезка разбиения
 
-    FunSinProc = fork();
-    if (FunSinProc == 0) //первый потомок процесса
+    FunSinProc = fork(); //создаем первый процесс-потомок
+    if (FunSinProc == 0)
     {
         proc.num = getpid();
         proc.data = 0.0;
         double temp1 = sinus(A); //нижняя граница
-        printf("%f\t", temp1);
         double temp2 = sinus(B); //верхняя граница
-        printf("%f\t", temp2);
-        double temp3 = 0.; //между A и B
+        double temp3 = 0.;       //между A и B
 
         double i = A + H;
         while (i < B)
@@ -104,20 +104,19 @@ int main()
             temp3 += sinus(i);
             i += H;
         }
-        printf("%f\t", temp3);
-        double sum = temp1 + temp2 + 2 * temp3;
-        printf("%f\t", sum);
-        proc.data = sum; //формула метода трапеций
-        write(file_tmp, &proc, sizeof(proc));
+
+        double sum = temp1 + temp2 + 2 * temp3; //по формуле трапеций
+
+        proc.data = sum;
+        write(file_tmp, &proc, sizeof(proc)); //запись данных во временный файл
         exit(0);
     }
 
-    FunCosProc = fork();
-    if (FunCosProc == 0) //второй потомок процесса
+    FunCosProc = fork(); //создаем второй процесс-потомок
+    if (FunCosProc == 0)
     {
         proc.num = getpid();
         proc.data = 0.0;
-        printf("проверка FunCos");
         double temp1 = cosinus(A); //нижняя граница
         double temp2 = cosinus(B); //верхняя граница
         double temp3 = 0.;         //между A и B
@@ -128,9 +127,9 @@ int main()
             temp3 += cosinus(j);
             j += H;
         }
-        double sum = temp1 + temp2 + 2 * temp3;
+        double sum = temp1 + temp2 + 2 * temp3; //формула трапеций
         proc.data = sum;
-        write(file_tmp, &proc, sizeof(proc));
+        write(file_tmp, &proc, sizeof(proc)); //запись данных во временный файл
         exit(0);
     }
 
@@ -141,12 +140,14 @@ int main()
 
     lseek(file_tmp, 0, SEEK_SET); //переходим в начало файла
 
+    double sinA, cosA;
+
     read(file_tmp, &proc, sizeof(proc));
     if (proc.num == FunSinProc)
         sinA = proc.data;
     if (proc.num == FunCosProc)
         cosA = proc.data;
-
+    //так как не знаем, какой процесс посчитается и запишется в файл раньше, читаем и проверяем два раза
     read(file_tmp, &proc, sizeof(proc));
     if (proc.num == FunSinProc)
         sinA = proc.data;
@@ -160,6 +161,9 @@ int main()
 
     waitpid(FunSinProc, NULL, 0);
     waitpid(FunCosProc, NULL, 0);
+
+    double F = H / 2 * (sinA + cosA); //формула трапеций итоговая
+    printf("Integral = %.10f\n", F);  //посчитанный интеграл по методу трапеций
 
     sleep(2);
     return 0;
